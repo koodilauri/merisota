@@ -1,0 +1,31 @@
+{
+  "name": "merisota",
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "format": "pnpm pretty && pnpm lint",
+    "pretty": "prettier --write \"**/*.+(js|jsx|json|html|css|less|scss|ts|tsx|svelte|yml|yaml|md|graphql|mdx)\" .",
+    "lint": "prettier --check . && eslint --fix .",
+    "build": "bun build ./src/index.ts --outdir ./dist --target bun",
+    "watch": "bun build ./src/index.ts --outdir ./dist --target bun --watch",
+    "start": "bun run ./src/index.ts",
+    "typecheck": "tsc --noEmit",
+    "test": "bun test"
+  },
+  "devDependencies": {
+    "@eslint/compat": "^2.0.2",
+    "@eslint/js": "^9.39.2",
+    "@types/bun": "latest",
+    "@typescript-eslint/eslint-plugin": "^8.54.0",
+    "@typescript-eslint/parser": "^8.54.0",
+    "eslint": "^9.39.2",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-prettier": "^5.5.5",
+    "eslint-plugin-promise": "^7.2.1",
+    "globals": "^17.3.0",
+    "prettier": "^3.8.1",
+    "tslib": "^2.8.1",
+    "typescript": "^5.9.3",
+    "typescript-eslint": "^8.54.0"
+  }
+}
