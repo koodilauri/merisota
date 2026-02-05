@@ -44,3 +44,5 @@ traces/
 # Github actions
 .cache
 .netrc
+
+todo.md
