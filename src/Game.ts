@@ -30,7 +30,7 @@ class Game {
     }
     this.enemyShips.clear()
     this.playerShips.clear()
-    
+
     this.placeShips()
   }
 
@@ -61,9 +61,6 @@ class Game {
   hasShipsLeft() {
     console.log('Has ships left')
   }
-
-
 }
 
 export default Game
-
