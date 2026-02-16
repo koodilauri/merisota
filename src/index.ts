@@ -1,23 +1,48 @@
 import readline from 'readline'
 
-console.log("=== Let's play BATTLESHIP ===\n")
+const BATTLESHIP_ART = `
+╔═══════════════════════════════════════════════════════════════════════════════════╗
+║                                                                                   ║
+║    ██████╗  █████╗ ████████╗████████╗██╗     ██████╗███████╗██╗  ██╗██╗██████╗    ║
+║    ██╔══██╗██╔══██╗╚══██╔══╝╚══██╔══╝██║     ██╔═══╝██╔════╝██║  ██║██║██╔══██╗   ║
+║    ██████╔╝███████║   ██║      ██║   ██║     █████╗ ███████╗███████║██║██████╔╝   ║
+║    ██╔══██╗██╔══██║   ██║      ██║   ██║     ██╔══╝ ╚════██║██╔══██║██║██╔═══╝    ║
+║    ██████╔╝██║  ██║   ██║      ██║   ███████╗██████╗███████║██║  ██║██║██║        ║
+║    ╚═════╝ ╚═╝  ╚═╝   ╚═╝      ╚═╝   ╚══════╝╚═════╝╚══════╝╚═╝  ╚═╝╚═╝╚═╝        ║
+║                                                                                   ║
+║                        ~ ~ ~ ~ ~   NAVAL COMBAT  ~ ~ ~ ~ ~                        ║
+║                                                                                   ║
+╚═══════════════════════════════════════════════════════════════════════════════════╝
+`
 
+console.log(BATTLESHIP_ART)
+console.log("         === Let's play BATTLESHIP ===\n")
+
+// enum SHIP_ID {
+//   patrol_boat = 1,
+//   submarine = 2,
+//   destroyer = 3
+// }
 type ShipType = 'patrol boat' | 'submarine' | 'destroyer'
-type Coordinate = { x: number; y: number }
-type Cell = 'empty' | 'hit' | 'miss' | number
-type Board = Cell[][]
-type ShipInfo = {
-  owner: 'player' | 'computer'
-  type: ShipType
-  length: number
-  cells: Coordinate[]
+// type Coordinate = { x: number; y: number }
+type CellType = 'empty' | 'hit' | 'miss' | ShipType
+// interface Cell {
+//   id: string // `${x}:${y}`
+//   x: number
+//   y: number
+//   shipId: number | null
+// }
+type Board = CellType[][]
+type Ship = {
+  size: number
   hitCount: number
 }
-type ShipRecord = Record<number, ShipInfo>
+// type ShipRecord = Record<number, Ship>
 
-// const ships: ShipInfo[] = []
+const playerShips = new Map<ShipType, Ship>()
+const enemyShips = new Map<ShipType, Ship>()
+
 const BOARD_SIZE = 5
-const ships: ShipRecord = {}
 
 function createBoard(size: number): Board {
   return Array.from({ length: size }, () => Array.from({ length: size }, () => 'empty'))
@@ -45,7 +70,7 @@ function printBoards(board: Board, hidden = false) {
           break
         default:
           if (hidden) row += '~ '
-          if (!hidden) row += `${y} `
+          if (!hidden) row += `# `
       }
     }
     console.log(row)
@@ -80,6 +105,7 @@ async function playerTurn() {
   while (!validCoordinate) {
     const input = await enterInput('Enter target (e.g. B7): ')
     const coordinates = parseCoordinate(input)
+    let updateShip: Ship | undefined = undefined
 
     if (coordinates) {
       const cell = enemyBoard[coordinates[0]][coordinates[1]]
@@ -96,10 +122,18 @@ async function playerTurn() {
           console.log('Already shot here, try again')
           break
         default:
-          console.log(ships[cell])
-          ships[cell].cells
-          // enemyBoard[coordinates[0]][coordinates[1]] = 'hit'
-          // console.log('You hit an enemy ship!')
+          updateShip = enemyShips.get(cell)
+          if (updateShip) {
+            updateShip.hitCount += 1
+            if (updateShip.hitCount >= updateShip.size) {
+              enemyShips.delete(cell)
+              console.log(`Hit! You sunk my ${cell}!`)
+            } else {
+              enemyShips.set(cell, updateShip)
+              console.log(`Hit!`)
+            }
+          }
+          enemyBoard[coordinates[0]][coordinates[1]] = 'hit'
           validCoordinate = true
       }
     } else {
@@ -113,34 +147,35 @@ function computerTurn() {
   while (!validCoordinate) {
     const x = Math.floor(Math.random() * BOARD_SIZE)
     const y = Math.floor(Math.random() * BOARD_SIZE)
+    let updateShip: Ship | undefined = undefined
     switch (playerBoard[x][y]) {
       case 'empty':
         playerBoard[x][y] = 'miss'
         validCoordinate = true
         break
-      case 'ship':
-        playerBoard[x][y] = 'hit'
-        validCoordinate = true
-        break
       case 'miss':
       case 'hit':
         break
+      default:
+        updateShip = playerShips.get(playerBoard[x][y])
+        if (updateShip) {
+          updateShip.hitCount += 1
+          if (updateShip.hitCount >= updateShip.size) {
+            playerShips.delete(playerBoard[x][y])
+            console.log(`I sunk your ${playerBoard[x][y]}!`)
+          } else {
+            playerShips.set(playerBoard[x][y], updateShip)
+          }
+        }
+        playerBoard[x][y] = 'hit'
+        validCoordinate = true
     }
   }
 }
 
-function placeShip(
-  board: Board,
-  shipName: ShipType,
-  shipSize: number,
-  shipId: number,
-  owner: 'player' | 'computer'
-) {
-  const ship: ShipInfo = {
-    owner: owner,
-    type: shipName,
-    length: shipSize,
-    cells: [],
+function placeShip(board: Board, shipName: ShipType, shipSize: number, ships: Map<ShipType, Ship>) {
+  const ship: Ship = {
+    size: shipSize,
     hitCount: 0
   }
   let shipPlaced = false
@@ -154,13 +189,10 @@ function placeShip(
         .flat()
         .slice(x, x + shipSize)
       if (shipArea.every(coordinate => coordinate === 'empty')) {
-        console.log(shipArea, orientation)
         for (let i = x; i < x + shipSize; i++) {
-          board[i][y] = shipId
-          ship.cells.push({ x: i, y: y })
-          console.log(i, y, shipName)
+          board[i][y] = shipName
         }
-        ships[shipId] = ship
+        ships.set(shipName, ship)
         shipPlaced = true
       }
     } else {
@@ -168,13 +200,10 @@ function placeShip(
       const y = Math.floor(Math.random() * (BOARD_SIZE - shipSize + 1))
       const shipArea = board[x].slice(y, y + shipSize)
       if (shipArea.every(coordinate => coordinate === 'empty')) {
-        console.log(shipArea, orientation)
         for (let i = y; i < y + shipSize; i++) {
-          board[x][i] = shipId
-          ship.cells.push({ x: x, y: i })
-          console.log(x, i, shipName)
+          board[x][i] = shipName
         }
-        ships[shipId] = ship
+        ships.set(shipName, ship)
         shipPlaced = true
       }
     }
@@ -184,22 +213,31 @@ function placeShip(
 
 const enemyBoard = createBoard(BOARD_SIZE)
 const playerBoard = createBoard(BOARD_SIZE)
-
-placeShip(enemyBoard, 'destroyer', 3, 0, 'computer')
-placeShip(enemyBoard, 'destroyer', 3, 1, 'computer')
-placeShip(enemyBoard, 'patrol boat', 2, 2, 'computer')
-
-placeShip(playerBoard, 'destroyer', 3, 3, 'player')
-placeShip(playerBoard, 'destroyer', 3, 4, 'player')
-placeShip(playerBoard, 'patrol boat', 2, 5, 'player')
-
-function remainingShips(board: Board): boolean {
-  for (const row of board) {
-    if (row.includes('ship')) return true
+function initGame() {
+  for (let i = 0; i < BOARD_SIZE; i++) {
+    for (let j = 0; j < BOARD_SIZE; j++) {
+      enemyBoard[i][j] = 'empty'
+      playerBoard[i][j] = 'empty'
+    }
   }
-  return false
+
+  enemyShips.clear()
+  playerShips.clear()
+  placeShip(enemyBoard, 'destroyer', 3, enemyShips)
+  placeShip(enemyBoard, 'submarine', 3, enemyShips)
+  placeShip(enemyBoard, 'patrol boat', 2, enemyShips)
+
+  placeShip(playerBoard, 'destroyer', 3, playerShips)
+  placeShip(playerBoard, 'submarine', 3, playerShips)
+  placeShip(playerBoard, 'patrol boat', 2, playerShips)
 }
 
+function remainingShips(ships: Map<ShipType, Ship>): boolean {
+  if (ships.size === 0) return false
+  return true
+}
+
+initGame()
 await enterInput('Press Enter to start!')
 
 console.log('\nEnemy Board\n')
@@ -207,18 +245,36 @@ printBoards(enemyBoard)
 console.log('\nPlayer Board\n')
 printBoards(playerBoard)
 
-while (!gameOver) {
-  await playerTurn()
-  if (!remainingShips(enemyBoard)) gameOver = true
-  computerTurn()
-  if (!remainingShips(playerBoard)) gameOver = true
+let exitGame = false
+while (!exitGame) {
+  while (!gameOver) {
+    await playerTurn()
+    computerTurn()
+    if (!remainingShips(enemyShips)) gameOver = true
+    if (!remainingShips(playerShips)) gameOver = true
 
-  console.log('\nEnemy Board\n')
-  printBoards(enemyBoard, true)
-  console.log('\nPlayer Board\n')
-  printBoards(playerBoard)
+    console.log('\nEnemy Board\n')
+    printBoards(enemyBoard, true)
+    console.log('\nPlayer Board\n')
+    printBoards(playerBoard)
+  }
+
+  console.log('=== GAME OVER ===')
+  if (!remainingShips(enemyShips) && !remainingShips(playerShips)) {
+    console.log('=== TIE GAME! ===')
+  } else {
+    if (!remainingShips(enemyShips)) console.log('=== YOU WIN! ===')
+    if (!remainingShips(playerShips)) console.log('=== YOU LOSE! ===')
+  }
+  const input = await enterInput('Press (q) to quit or (n) for new game.')
+  if (input === 'q') {
+    exitGame = true
+  } else {
+    gameOver = false
+    initGame()
+    console.log('\nEnemy Board\n')
+    printBoards(enemyBoard)
+    console.log('\nPlayer Board\n')
+    printBoards(playerBoard)
+  }
 }
-
-console.log('=== GAME OVER ===')
-if (!remainingShips(enemyBoard)) console.log('=== YOU WIN! ===')
-if (!remainingShips(playerBoard)) console.log('=== YOU LOSE! ===')
