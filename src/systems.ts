@@ -196,6 +196,10 @@ export function enterInput(message: string): Promise<string> {
   return new Promise(resolve => rl.question(message, resolve))
 }
 
+export function closeInput(): void {
+  rl.close()
+}
+
 export function remainingShips(ships: Map<ShipType, Ship>): boolean {
   if (ships.size === 0) return false
   return true

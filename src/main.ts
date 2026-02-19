@@ -43,7 +43,7 @@ export async function main() {
         if (!systems.remainingShips(state.enemyShips)) console.log('=== YOU WIN! ===')
         if (!systems.remainingShips(state.playerShips)) console.log('=== YOU LOSE! ===')
       }
-      const input = await systems.enterInput('Press (q) to quit or (n) for new game.')
+      const input = await systems.enterInput('Enter (q) to quit or press Enter for new game.')
       if (input === 'q') {
         console.log('Thanks for playing! See you again.')
         systems.closeInput()
