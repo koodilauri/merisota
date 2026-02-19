@@ -3,6 +3,35 @@ import readline from 'readline'
 import { GameState } from './GameState'
 import { ShipType, Ship, Board } from './types'
 
+export function playerShot(state: GameState, coordinates: [number, number]) {
+  let tryAgain = false
+  let updateShip: Ship | undefined = undefined
+
+  const cell = state.enemyBoard[coordinates[0]][coordinates[1]]
+  switch (cell) {
+    case 'empty':
+      state.enemyBoard[coordinates[0]][coordinates[1]] = 'miss'
+      return { success: tryAgain, msg: 'You miss!' }
+    case 'miss':
+    case 'hit':
+      tryAgain = true
+      return { success: tryAgain, msg: 'Already shot there, try again' }
+    default:
+      updateShip = state.enemyShips.get(cell)
+      state.enemyBoard[coordinates[0]][coordinates[1]] = 'hit'
+      if (updateShip) {
+        updateShip.hitCount += 1
+        if (updateShip.hitCount >= updateShip.size) {
+          state.enemyShips.delete(cell)
+          return { success: tryAgain, msg: `Hit! You sunk my ${cell}!` }
+        } else {
+          state.enemyShips.set(cell, updateShip)
+          return { success: tryAgain, msg: 'Hit!' }
+        }
+      }
+  }
+}
+
 export async function playerTurn(state: GameState) {
   let validCoordinate = false
   while (!validCoordinate) {
