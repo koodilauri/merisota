@@ -1,5 +1,5 @@
 import { Board } from './types'
-// console loki
+
 export function printBoards(board: Board, hidden = false) {
   const header = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J']
   console.log('  ' + header.slice(0, board.length).join(' '))
