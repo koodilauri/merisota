@@ -8,11 +8,14 @@ export async function main() {
   const config = loadConfig()
   const state = createGameState(config.boardSize)
 
-  systems.initGame(state)
   ui.printStartScreen()
   await ui.enterInput('Press any key to start!')
 
-  console.log()
+  systems.initGame(state)
+  if (process.stdin.isTTY) process.stdin.setRawMode(true)
+  await systems.placePlayerShips(state)
+  if (process.stdin.isTTY) process.stdin.setRawMode(false)
+
   ui.printBoardSection('\nEnemy Board\n', state.enemyBoard, config.hideEnemy)
   ui.printBoardSection('\nPlayer Board\n', state.playerBoard)
 
@@ -34,7 +37,7 @@ export async function main() {
         console.log(result.msg)
       }
     } else {
-        console.log('Error parsing coordinates. Unknown coordinates:', raw)
+      console.log('Error parsing coordinates. Unknown coordinates:', raw)
     }
     if (gameOver) {
       console.log('=== GAME OVER ===')

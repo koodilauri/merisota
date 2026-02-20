@@ -1,5 +1,6 @@
 import { GameState } from './GameState'
 import { ShipType, Ship, Board } from './types'
+import readline from 'readline'
 
 export function playerShot(
   state: GameState,
@@ -22,7 +23,10 @@ export function playerShot(
         updateShip.hitCount += 1
         if (updateShip.hitCount >= updateShip.size) {
           state.enemyShips.delete(cell)
-          return { success: true, msg: `You shot at ${coordinateToDisplay(coordinates)}: Hit! You sunk my ${cell}!` }
+          return {
+            success: true,
+            msg: `You shot at ${coordinateToDisplay(coordinates)}: Hit! You sunk my ${cell}!`
+          }
         } else {
           state.enemyShips.set(cell, updateShip)
           return { success: true, msg: `You shot at ${coordinateToDisplay(coordinates)}: Hit!` }
@@ -44,7 +48,7 @@ export function computerTurn(state: GameState): string {
       case 'empty':
         state.playerBoard[x][y] = 'miss'
         validCoordinate = true
-        msg = `Enemy shot at ${coordinateToDisplay([x,y])}: They missed!`
+        msg = `Enemy shot at ${coordinateToDisplay([x, y])}: They missed!`
         break
       case 'miss':
       case 'hit':
@@ -56,10 +60,10 @@ export function computerTurn(state: GameState): string {
           updateShip.hitCount += 1
           if (updateShip.hitCount >= updateShip.size) {
             state.playerShips.delete(coordinates)
-            msg = `Enemy shot at ${coordinateToDisplay([x,y])}: They sunk your ${coordinates}!`
+            msg = `Enemy shot at ${coordinateToDisplay([x, y])}: They sunk your ${coordinates}!`
           } else {
             state.playerShips.set(coordinates, updateShip)
-            msg = `Enemy shot at ${coordinateToDisplay([x,y])}: They hit!`
+            msg = `Enemy shot at ${coordinateToDisplay([x, y])}: They hit!`
           }
         }
         validCoordinate = true
@@ -67,47 +71,29 @@ export function computerTurn(state: GameState): string {
   }
   return msg
 }
-export function placeShip(
+export function placeShipRandomly(
   board: Board,
   shipName: ShipType,
   shipSize: number,
   ships: Map<ShipType, Ship>,
   boardSize: number
 ) {
-  const ship: Ship = {
-    size: shipSize,
-    hitCount: 0
-  }
   let shipPlaced = false
-  let orientation = Math.floor(Math.random() * 2)
   while (!shipPlaced) {
+    const orientation = Math.floor(Math.random() * 2)
+    let x = 0
+    let y = 0
     if (orientation === 0) {
-      const x = Math.floor(Math.random() * (boardSize - shipSize + 1))
-      const y = Math.floor(Math.random() * boardSize)
-      const shipArea = board
-        .map(row => row.slice(y, y + 1))
-        .flat()
-        .slice(x, x + shipSize)
-      if (shipArea.every(coordinate => coordinate === 'empty')) {
-        for (let i = x; i < x + shipSize; i++) {
-          board[i][y] = shipName
-        }
-        ships.set(shipName, ship)
-        shipPlaced = true
-      }
+      x = Math.floor(Math.random() * (boardSize - shipSize + 1))
+      y = Math.floor(Math.random() * boardSize)
     } else {
-      const x = Math.floor(Math.random() * boardSize)
-      const y = Math.floor(Math.random() * (boardSize - shipSize + 1))
-      const shipArea = board[x].slice(y, y + shipSize)
-      if (shipArea.every(coordinate => coordinate === 'empty')) {
-        for (let i = y; i < y + shipSize; i++) {
-          board[x][i] = shipName
-        }
-        ships.set(shipName, ship)
-        shipPlaced = true
-      }
+      x = Math.floor(Math.random() * boardSize)
+      y = Math.floor(Math.random() * (boardSize - shipSize + 1))
     }
-    orientation = Math.floor(Math.random() * 2)
+    if (canPlaceShip(board, boardSize, x, y, shipSize, orientation)) {
+      placeShipAt(board, ships, shipName, x, y, shipSize, orientation)
+      shipPlaced = true
+    }
   }
 }
 
@@ -121,17 +107,17 @@ export function initGame(state: GameState) {
 
   state.enemyShips.clear()
   state.playerShips.clear()
-  placeShip(state.enemyBoard, 'aircraft carrier', 5, state.enemyShips, state.boardSize)
-  placeShip(state.enemyBoard, 'battleship', 4, state.enemyShips, state.boardSize)  
-  placeShip(state.enemyBoard, 'destroyer', 3, state.enemyShips, state.boardSize)
-  placeShip(state.enemyBoard, 'submarine', 3, state.enemyShips, state.boardSize)
-  placeShip(state.enemyBoard, 'patrol boat', 2, state.enemyShips, state.boardSize)
+  placeShipRandomly(state.enemyBoard, 'aircraft carrier', 5, state.enemyShips, state.boardSize)
+  placeShipRandomly(state.enemyBoard, 'battleship', 4, state.enemyShips, state.boardSize)
+  placeShipRandomly(state.enemyBoard, 'destroyer', 3, state.enemyShips, state.boardSize)
+  placeShipRandomly(state.enemyBoard, 'submarine', 3, state.enemyShips, state.boardSize)
+  placeShipRandomly(state.enemyBoard, 'patrol boat', 2, state.enemyShips, state.boardSize)
 
-  placeShip(state.playerBoard, 'aircraft carrier', 5, state.playerShips, state.boardSize)
-  placeShip(state.playerBoard, 'battleship', 4, state.playerShips, state.boardSize)  
-  placeShip(state.playerBoard, 'destroyer', 3, state.playerShips, state.boardSize)
-  placeShip(state.playerBoard, 'submarine', 3, state.playerShips, state.boardSize)
-  placeShip(state.playerBoard, 'patrol boat', 2, state.playerShips, state.boardSize)
+  placeShipRandomly(state.playerBoard, 'aircraft carrier', 5, state.playerShips, state.boardSize)
+  placeShipRandomly(state.playerBoard, 'battleship', 4, state.playerShips, state.boardSize)
+  placeShipRandomly(state.playerBoard, 'destroyer', 3, state.playerShips, state.boardSize)
+  placeShipRandomly(state.playerBoard, 'submarine', 3, state.playerShips, state.boardSize)
+  placeShipRandomly(state.playerBoard, 'patrol boat', 2, state.playerShips, state.boardSize)
 }
 
 export function parseCoordinate(input: string, boardSize: number): [number, number] | null {
@@ -156,4 +142,95 @@ export function coordinateToDisplay(coords: [number, number]): string {
 export function remainingShips(ships: Map<ShipType, Ship>): boolean {
   if (ships.size === 0) return false
   return true
+}
+
+export function canPlaceShip(
+  board: Board,
+  boardSize: number,
+  row: number,
+  col: number,
+  shipSize: number,
+  orientation: number
+): boolean {
+  if (orientation === 0) {
+    if (row + shipSize > boardSize) return false
+    for (let i = row; i < row + shipSize; i++) {
+      if (board[i][col] !== 'empty') return false
+    }
+  } else {
+    if (col + shipSize > boardSize) return false
+    for (let i = col; i < col + shipSize; i++) {
+      if (board[row][i] !== 'empty') return false
+    }
+  }
+  return true
+}
+
+export function placeShipAt(
+  board: Board,
+  shipMap: Map<ShipType, Ship>,
+  shipName: ShipType,
+  row: number,
+  col: number,
+  shipSize: number,
+  orientation: number
+): void {
+  const ship: Ship = { size: shipSize, hitCount: 0 }
+  shipMap.set(shipName, ship)
+  if (orientation === 0) {
+    for (let i = row; i < row + shipSize; i++) board[i][col] = shipName
+  } else {
+    for (let i = col; i < col + shipSize; i++) board[row][i] = shipName
+  }
+}
+
+export async function placePlayerShips(state: GameState) {
+  const ships = [
+    { name: 'aircraft carrier', size: 5 },
+    { name: 'battleship', size: 4 },
+    { name: 'destroyer', size: 3 },
+    { name: 'submarine', size: 3 },
+    { name: 'patrol boat', size: 2 }
+  ]
+
+  for (const ship of ships) {
+    let shipPlaced = false
+    let row = 0
+    let col = 0
+    let orientation = 0
+
+    while (!shipPlaced) {
+      const key =  null//await readKey()
+      switch (key) {
+        case 'up':
+          col++
+          break
+        case 'down':
+          col--
+          break
+        case 'left':
+          row--
+          break
+        case 'right':
+          row++
+          break
+        case 'space':
+          orientation = 1 - orientation
+          break
+        case 'enter':
+          if (canPlaceShip(state.playerBoard, state.boardSize, row, col, ship.size, orientation)) {
+            placeShipAt(
+              state.playerBoard,
+              state.playerShips,
+              ship.name,
+              row,
+              col,
+              ship.size,
+              orientation
+            )
+          }
+      }
+      shipPlaced = true
+    }
+  }
 }

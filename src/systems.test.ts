@@ -68,16 +68,12 @@ describe('remainingShips', () => {
   })
 
   test('returns true when at least one ship', () => {
-    const ships = new Map<ShipType, Ship>([
-      ['destroyer', { size: 3, hitCount: 0 }]
-    ])
+    const ships = new Map<ShipType, Ship>([['destroyer', { size: 3, hitCount: 0 }]])
     expect(remainingShips(ships)).toBe(true)
   })
 
   test('returns true when ships exist even if all sunk (hitCount >= size)', () => {
-    const ships = new Map<ShipType, Ship>([
-      ['destroyer', { size: 3, hitCount: 3 }]
-    ])
+    const ships = new Map<ShipType, Ship>([['destroyer', { size: 3, hitCount: 3 }]])
     expect(remainingShips(ships)).toBe(true)
   })
 })
@@ -157,7 +153,13 @@ describe('initGame', () => {
     initGame(state)
     expect(state.enemyShips.size).toBe(5)
     expect(state.playerShips.size).toBe(5)
-    const shipTypes: ShipType[] = ['destroyer', 'submarine', 'patrol boat', 'battleship', 'aircraft carrier']
+    const shipTypes: ShipType[] = [
+      'destroyer',
+      'submarine',
+      'patrol boat',
+      'battleship',
+      'aircraft carrier'
+    ]
     for (const name of shipTypes) {
       expect(state.enemyShips.has(name)).toBe(true)
       expect(state.playerShips.has(name)).toBe(true)
@@ -167,7 +169,14 @@ describe('initGame', () => {
   test('enemy and player boards contain only empty or ship types', () => {
     const state = createGameState(GAME_BOARD_SIZE)
     initGame(state)
-    const valid: string[] = ['empty', 'destroyer', 'submarine', 'patrol boat', 'battleship', 'aircraft carrier']
+    const valid: string[] = [
+      'empty',
+      'destroyer',
+      'submarine',
+      'patrol boat',
+      'battleship',
+      'aircraft carrier'
+    ]
     for (let i = 0; i < state.boardSize; i++) {
       for (let j = 0; j < state.boardSize; j++) {
         expect(valid).toContain(state.enemyBoard[i][j])
@@ -195,9 +204,7 @@ describe('computerTurn', () => {
     expect(typeof msg).toBe('string')
     expect(msg.length).toBeGreaterThan(0)
     const valid =
-      msg.includes('They missed!') ||
-      msg.includes('They hit!') ||
-      /They sunk your .+!/.test(msg)
+      msg.includes('They missed!') || msg.includes('They hit!') || /They sunk your .+!/.test(msg)
     expect(valid).toBe(true)
   })
 
@@ -218,9 +225,7 @@ describe('computerTurn', () => {
     const msg = computerTurn(state)
     expect(state.playerBoard[0][0]).toBe(was === 'empty' ? 'miss' : 'hit')
     const valid =
-      msg.includes('They missed!') ||
-      msg.includes('They hit!') ||
-      /They sunk your .+!/.test(msg)
+      msg.includes('They missed!') || msg.includes('They hit!') || /They sunk your .+!/.test(msg)
     expect(valid).toBe(true)
   })
 })
