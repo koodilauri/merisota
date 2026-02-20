@@ -1,6 +1,7 @@
 import { describe, expect, test, beforeEach, afterEach } from 'bun:test'
 import {
   parseCoordinate,
+  coordinateToDisplay,
   remainingShips,
   playerShot,
   computerTurn,
@@ -10,6 +11,7 @@ import { createGameState } from './GameState'
 import type { ShipType, Ship } from './types'
 
 const BOARD_SIZE = 5
+const GAME_BOARD_SIZE = 10 // initGame uses 10x10 and 5 ship types
 
 describe('parseCoordinate', () => {
   test('parses valid coordinates A1 through E5 for size 5', () => {
@@ -45,6 +47,21 @@ describe('parseCoordinate', () => {
   })
 })
 
+describe('coordinateToDisplay', () => {
+  test('converts 0,0 to A1 and other indices to letter+row', () => {
+    expect(coordinateToDisplay([0, 0])).toBe('A1')
+    expect(coordinateToDisplay([1, 1])).toBe('B2')
+    expect(coordinateToDisplay([4, 4])).toBe('E5')
+    expect(coordinateToDisplay([0, 4])).toBe('E1')
+    expect(coordinateToDisplay([4, 0])).toBe('A5')
+  })
+
+  test('supports full 10x10 (J10)', () => {
+    expect(coordinateToDisplay([9, 9])).toBe('J10')
+    expect(coordinateToDisplay([9, 0])).toBe('A10')
+  })
+})
+
 describe('remainingShips', () => {
   test('returns false when no ships', () => {
     expect(remainingShips(new Map())).toBe(false)
@@ -69,7 +86,7 @@ describe('playerShot', () => {
   let state: ReturnType<typeof createGameState>
 
   beforeEach(() => {
-    state = createGameState()
+    state = createGameState(GAME_BOARD_SIZE)
     initGame(state)
   })
 
@@ -77,7 +94,7 @@ describe('playerShot', () => {
     const [r, c] = findEmptyCell(state.enemyBoard)
     const result = playerShot(state, [r, c])
     expect(result.success).toBe(true)
-    expect(result.msg).toBe('You miss!')
+    expect(result.msg).toContain('You miss!')
     expect(state.enemyBoard[r][c]).toBe('miss')
   })
 
@@ -94,7 +111,7 @@ describe('playerShot', () => {
     const shipType = state.enemyBoard[r][c] as ShipType
     const result = playerShot(state, [r, c])
     expect(result.success).toBe(true)
-    expect(result.msg).toBe('Hit!')
+    expect(result.msg).toContain('Hit!')
     expect(state.enemyBoard[r][c]).toBe('hit')
     const ship = state.enemyShips.get(shipType)
     expect(ship).toBeDefined()
@@ -124,34 +141,33 @@ describe('playerShot', () => {
 })
 
 describe('initGame', () => {
-  test('creates 5x5 boards filled with cells', () => {
-    const state = createGameState()
+  test('creates NxN boards filled with cells', () => {
+    const state = createGameState(GAME_BOARD_SIZE)
     initGame(state)
-    expect(state.enemyBoard.length).toBe(BOARD_SIZE)
-    expect(state.playerBoard.length).toBe(BOARD_SIZE)
-    for (let i = 0; i < BOARD_SIZE; i++) {
-      expect(state.enemyBoard[i].length).toBe(BOARD_SIZE)
-      expect(state.playerBoard[i].length).toBe(BOARD_SIZE)
+    expect(state.enemyBoard.length).toBe(GAME_BOARD_SIZE)
+    expect(state.playerBoard.length).toBe(GAME_BOARD_SIZE)
+    for (let i = 0; i < GAME_BOARD_SIZE; i++) {
+      expect(state.enemyBoard[i].length).toBe(GAME_BOARD_SIZE)
+      expect(state.playerBoard[i].length).toBe(GAME_BOARD_SIZE)
     }
   })
 
-  test('places three enemy ships and three player ships', () => {
-    const state = createGameState()
+  test('places five enemy ships and five player ships', () => {
+    const state = createGameState(GAME_BOARD_SIZE)
     initGame(state)
-    expect(state.enemyShips.size).toBe(3)
-    expect(state.playerShips.size).toBe(3)
-    expect(state.enemyShips.has('destroyer')).toBe(true)
-    expect(state.enemyShips.has('submarine')).toBe(true)
-    expect(state.enemyShips.has('patrol boat')).toBe(true)
-    expect(state.playerShips.has('destroyer')).toBe(true)
-    expect(state.playerShips.has('submarine')).toBe(true)
-    expect(state.playerShips.has('patrol boat')).toBe(true)
+    expect(state.enemyShips.size).toBe(5)
+    expect(state.playerShips.size).toBe(5)
+    const shipTypes: ShipType[] = ['destroyer', 'submarine', 'patrol boat', 'battleship', 'aircraft carrier']
+    for (const name of shipTypes) {
+      expect(state.enemyShips.has(name)).toBe(true)
+      expect(state.playerShips.has(name)).toBe(true)
+    }
   })
 
   test('enemy and player boards contain only empty or ship types', () => {
-    const state = createGameState()
+    const state = createGameState(GAME_BOARD_SIZE)
     initGame(state)
-    const valid: string[] = ['empty', 'destroyer', 'submarine', 'patrol boat']
+    const valid: string[] = ['empty', 'destroyer', 'submarine', 'patrol boat', 'battleship', 'aircraft carrier']
     for (let i = 0; i < state.boardSize; i++) {
       for (let j = 0; j < state.boardSize; j++) {
         expect(valid).toContain(state.enemyBoard[i][j])
@@ -173,18 +189,20 @@ describe('computerTurn', () => {
   })
 
   test('eventually picks a cell and returns a message', () => {
-    const state = createGameState()
+    const state = createGameState(GAME_BOARD_SIZE)
     initGame(state)
     const msg = computerTurn(state)
     expect(typeof msg).toBe('string')
     expect(msg.length).toBeGreaterThan(0)
-    const validMessages = ['Enemy shot missed', 'Enemy hit your ship!']
-    const sunkMatch = msg.match(/I sunk your .+!/)
-    expect(validMessages.includes(msg) || sunkMatch).toBeTruthy()
+    const valid =
+      msg.includes('They missed!') ||
+      msg.includes('They hit!') ||
+      /They sunk your .+!/.test(msg)
+    expect(valid).toBe(true)
   })
 
   test('marks a cell on player board as miss or hit', () => {
-    const state = createGameState()
+    const state = createGameState(GAME_BOARD_SIZE)
     initGame(state)
     const missOrHitBefore = countMissAndHit(state.playerBoard)
     computerTurn(state)
@@ -193,16 +211,16 @@ describe('computerTurn', () => {
   })
 
   test('with Math.random returning 0, shoots (0,0); cell becomes miss or hit', () => {
-    const state = createGameState()
+    const state = createGameState(GAME_BOARD_SIZE)
     initGame(state) // use real random so placement succeeds
     Math.random = () => 0 // then fix random so computerTurn picks (0,0)
     const was = state.playerBoard[0][0]
     const msg = computerTurn(state)
     expect(state.playerBoard[0][0]).toBe(was === 'empty' ? 'miss' : 'hit')
     const valid =
-      msg === 'Enemy shot missed' ||
-      msg === 'Enemy hit your ship!' ||
-      /I sunk your .+!/.test(msg)
+      msg.includes('They missed!') ||
+      msg.includes('They hit!') ||
+      /They sunk your .+!/.test(msg)
     expect(valid).toBe(true)
   })
 })
@@ -217,7 +235,7 @@ function findEmptyCell(board: string[][]): [number, number] {
 }
 
 function findShipCell(board: string[][]): [number, number] {
-  const shipTypes = ['destroyer', 'submarine', 'patrol boat']
+  const shipTypes = ['destroyer', 'submarine', 'patrol boat', 'battleship', 'aircraft carrier']
   for (let r = 0; r < board.length; r++) {
     for (let c = 0; c < board[r].length; c++) {
       if (shipTypes.includes(board[r][c])) return [r, c]
