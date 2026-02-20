@@ -11,7 +11,7 @@ export function playerShot(
   switch (cell) {
     case 'empty':
       state.enemyBoard[coordinates[0]][coordinates[1]] = 'miss'
-      return { success: true, msg: 'You miss!' }
+      return { success: true, msg: `You shot at ${coordinateToDisplay(coordinates)}: You miss!` }
     case 'miss':
     case 'hit':
       return { success: false, msg: 'Already shot there, try again' }
@@ -22,10 +22,10 @@ export function playerShot(
         updateShip.hitCount += 1
         if (updateShip.hitCount >= updateShip.size) {
           state.enemyShips.delete(cell)
-          return { success: true, msg: `Hit! You sunk my ${cell}!` }
+          return { success: true, msg: `You shot at ${coordinateToDisplay(coordinates)}: Hit! You sunk my ${cell}!` }
         } else {
           state.enemyShips.set(cell, updateShip)
-          return { success: true, msg: 'Hit!' }
+          return { success: true, msg: `You shot at ${coordinateToDisplay(coordinates)}: Hit!` }
         }
       }
   }
@@ -44,7 +44,7 @@ export function computerTurn(state: GameState): string {
       case 'empty':
         state.playerBoard[x][y] = 'miss'
         validCoordinate = true
-        msg = 'Enemy shot missed'
+        msg = `Enemy shot at ${coordinateToDisplay([x,y])}: They missed!`
         break
       case 'miss':
       case 'hit':
@@ -56,10 +56,10 @@ export function computerTurn(state: GameState): string {
           updateShip.hitCount += 1
           if (updateShip.hitCount >= updateShip.size) {
             state.playerShips.delete(coordinates)
-            msg = `I sunk your ${coordinates}!`
+            msg = `Enemy shot at ${coordinateToDisplay([x,y])}: They sunk your ${coordinates}!`
           } else {
             state.playerShips.set(coordinates, updateShip)
-            msg = 'Enemy hit your ship!'
+            msg = `Enemy shot at ${coordinateToDisplay([x,y])}: They hit!`
           }
         }
         validCoordinate = true
@@ -145,6 +145,12 @@ export function parseCoordinate(input: string, boardSize: number): [number, numb
   const row = Number(match[2]) - 1
   if (col > boardSize - 1 || row > boardSize - 1) return null
   return [row, col]
+}
+
+export function coordinateToDisplay(coords: [number, number]): string {
+  const letter = String.fromCharCode(65 + coords[1])
+  const num = coords[0] + 1
+  return `${letter}${num}`
 }
 
 export function remainingShips(ships: Map<ShipType, Ship>): boolean {
