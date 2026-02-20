@@ -1,5 +1,3 @@
-import readline from 'readline'
-
 import { GameState } from './GameState'
 import { ShipType, Ship, Board } from './types'
 
@@ -32,48 +30,6 @@ export function playerShot(
       }
   }
   return { success: false, msg: 'Something went wrong with applying the shot' }
-}
-
-export async function playerTurn(state: GameState) {
-  let validCoordinate = false
-  while (!validCoordinate) {
-    const input = await enterInput('Enter target (e.g. B7): ')
-    const coordinates = parseCoordinate(input, state.boardSize)
-    let updateShip: Ship | undefined = undefined
-
-    if (coordinates) {
-      const cell = state.enemyBoard[coordinates[0]][coordinates[1]]
-      switch (cell) {
-        case 'empty':
-          state.enemyBoard[coordinates[0]][coordinates[1]] = 'miss'
-          console.log('You miss!')
-          validCoordinate = true
-          break
-        case 'miss':
-          console.log('Already shot here, try again')
-          break
-        case 'hit':
-          console.log('Already shot here, try again')
-          break
-        default:
-          updateShip = state.enemyShips.get(cell)
-          if (updateShip) {
-            updateShip.hitCount += 1
-            if (updateShip.hitCount >= updateShip.size) {
-              state.enemyShips.delete(cell)
-              console.log(`Hit! You sunk my ${cell}!`)
-            } else {
-              state.enemyShips.set(cell, updateShip)
-              console.log(`Hit!`)
-            }
-          }
-          state.enemyBoard[coordinates[0]][coordinates[1]] = 'hit'
-          validCoordinate = true
-      }
-    } else {
-      console.log('Error parsing coordinates, please try again. Unknown coordinates:', input)
-    }
-  }
 }
 
 export function computerTurn(state: GameState): string {
@@ -185,19 +141,6 @@ export function parseCoordinate(input: string, boardSize: number): [number, numb
   const row = Number(match[2]) - 1
   if (col > boardSize - 1 || row > boardSize - 1) return null
   return [row, col]
-}
-
-const rl = readline.createInterface({
-  input: process.stdin,
-  output: process.stdout
-})
-
-export function enterInput(message: string): Promise<string> {
-  return new Promise(resolve => rl.question(message, resolve))
-}
-
-export function closeInput(): void {
-  rl.close()
 }
 
 export function remainingShips(ships: Map<ShipType, Ship>): boolean {

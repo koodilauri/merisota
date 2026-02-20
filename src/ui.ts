@@ -1,7 +1,10 @@
+import readline from 'readline'
+
 import { Board } from './types'
 
-export function printBoards(board: Board, hidden = false) {
+export function printBoardSection(title: string, board: Board, hidden = false) {
   const header = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J']
+  console.log(title)
   console.log('  ' + header.slice(0, board.length).join(' '))
 
   let row = ''
@@ -46,4 +49,17 @@ const BATTLESHIP_ART = `
 export function printStartScreen() {
   console.log(BATTLESHIP_ART)
   console.log("         === Let's play BATTLESHIP ===\n")
+}
+
+const rl = readline.createInterface({
+  input: process.stdin,
+  output: process.stdout
+})
+
+export function enterInput(message: string): Promise<string> {
+  return new Promise(resolve => rl.question(message, resolve))
+}
+
+export function closeInput(): void {
+  rl.close()
 }
