@@ -7,19 +7,18 @@ export interface GameState {
   enemyBoard: Board
   boardSize: number
 }
-const BOARD_SIZE = 5
 
-export function createGameState(): GameState {
+export function createGameState(boardSize: number): GameState {
   const playerShips = new Map<ShipType, Ship>()
   const enemyShips = new Map<ShipType, Ship>()
-  const enemyBoard = createBoard(BOARD_SIZE)
-  const playerBoard = createBoard(BOARD_SIZE)
+  const enemyBoard = createBoard(boardSize)
+  const playerBoard = createBoard(boardSize)
   return {
     playerShips: playerShips,
     enemyShips: enemyShips,
     enemyBoard: enemyBoard,
     playerBoard: playerBoard,
-    boardSize: BOARD_SIZE
+    boardSize: boardSize
   }
 }
 

@@ -1,17 +1,19 @@
 import { createGameState } from './GameState'
 import * as systems from './systems'
 import * as ui from './ui'
+import { loadConfig } from './config'
 
 export async function main() {
   let gameOver = false
-  // let exitGame = false
-  const state = createGameState()
+  const config = loadConfig()
+  const state = createGameState(config.boardSize)
+
   systems.initGame(state)
   ui.printStartScreen()
   await ui.enterInput('Press any key to start!')
 
   console.log()
-  ui.printBoardSection('\nEnemy Board\n', state.enemyBoard)
+  ui.printBoardSection('\nEnemy Board\n', state.enemyBoard, config.hideEnemy)
   ui.printBoardSection('\nPlayer Board\n', state.playerBoard)
 
   while (!gameOver) {
@@ -26,7 +28,7 @@ export async function main() {
         if (!systems.remainingShips(state.enemyShips)) gameOver = true
         if (!systems.remainingShips(state.playerShips)) gameOver = true
 
-        ui.printBoardSection('\nEnemy Board\n', state.enemyBoard, true)
+        ui.printBoardSection('\nEnemy Board\n', state.enemyBoard, config.hideEnemy)
         ui.printBoardSection('\nPlayer Board\n', state.playerBoard)
       } else {
         console.log(result.msg)
@@ -50,7 +52,7 @@ export async function main() {
       } else {
         gameOver = false
         systems.initGame(state)
-        ui.printBoardSection('\nEnemy Board\n', state.enemyBoard)
+        ui.printBoardSection('\nEnemy Board\n', state.enemyBoard, config.hideEnemy)
         ui.printBoardSection('\nPlayer Board\n', state.playerBoard)
       }
     }

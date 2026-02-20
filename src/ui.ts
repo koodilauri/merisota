@@ -5,10 +5,11 @@ import { Board } from './types'
 export function printBoardSection(title: string, board: Board, hidden = false) {
   const header = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J']
   console.log(title)
-  console.log('  ' + header.slice(0, board.length).join(' '))
+  console.log('   ' + header.slice(0, board.length).join(' '))
 
   let row = ''
   for (const x in board) {
+    if (Number(x) < 9) row += ' '
     row += `${Number(x) + 1} `
     for (const y of board[x]) {
       switch (y) {

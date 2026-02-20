@@ -121,10 +121,14 @@ export function initGame(state: GameState) {
 
   state.enemyShips.clear()
   state.playerShips.clear()
+  placeShip(state.enemyBoard, 'aircraft carrier', 5, state.enemyShips, state.boardSize)
+  placeShip(state.enemyBoard, 'battleship', 4, state.enemyShips, state.boardSize)  
   placeShip(state.enemyBoard, 'destroyer', 3, state.enemyShips, state.boardSize)
   placeShip(state.enemyBoard, 'submarine', 3, state.enemyShips, state.boardSize)
   placeShip(state.enemyBoard, 'patrol boat', 2, state.enemyShips, state.boardSize)
 
+  placeShip(state.playerBoard, 'aircraft carrier', 5, state.playerShips, state.boardSize)
+  placeShip(state.playerBoard, 'battleship', 4, state.playerShips, state.boardSize)  
   placeShip(state.playerBoard, 'destroyer', 3, state.playerShips, state.boardSize)
   placeShip(state.playerBoard, 'submarine', 3, state.playerShips, state.boardSize)
   placeShip(state.playerBoard, 'patrol boat', 2, state.playerShips, state.boardSize)
