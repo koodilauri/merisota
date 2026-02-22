@@ -1,6 +1,5 @@
 import { GameState } from './GameState'
 import { ShipType, Ship, Board } from './types'
-import readline from 'readline'
 
 export function playerShot(
   state: GameState,
@@ -37,37 +36,32 @@ export function playerShot(
 }
 
 export function computerTurn(state: GameState): string {
-  let validCoordinate = false
   let msg = ''
-  while (!validCoordinate) {
-    const x = Math.floor(Math.random() * state.boardSize)
-    const y = Math.floor(Math.random() * state.boardSize)
-    const coordinates = state.playerBoard[x][y]
-    let updateShip: Ship | undefined = undefined
-    switch (coordinates) {
-      case 'empty':
-        state.playerBoard[x][y] = 'miss'
-        validCoordinate = true
-        msg = `Enemy shot at ${coordinateToDisplay([x, y])}: They missed!`
-        break
-      case 'miss':
-      case 'hit':
-        break
-      default:
-        updateShip = state.playerShips.get(coordinates)
-        state.playerBoard[x][y] = 'hit'
-        if (updateShip) {
-          updateShip.hitCount += 1
-          if (updateShip.hitCount >= updateShip.size) {
-            state.playerShips.delete(coordinates)
-            msg = `Enemy shot at ${coordinateToDisplay([x, y])}: They sunk your ${coordinates}!`
-          } else {
-            state.playerShips.set(coordinates, updateShip)
-            msg = `Enemy shot at ${coordinateToDisplay([x, y])}: They hit!`
-          }
+  const validTargets = validCoordinates(state.playerBoard)
+  const [x, y] = validTargets[Math.floor(Math.random() * validTargets.length)]
+  const coordinates = state.playerBoard[x][y]
+  let updateShip: Ship | undefined = undefined
+  switch (coordinates) {
+    case 'empty':
+      state.playerBoard[x][y] = 'miss'
+      msg = `Enemy shot at ${coordinateToDisplay([x, y])}: They missed!`
+      break
+    case 'miss':
+    case 'hit':
+      break
+    default:
+      updateShip = state.playerShips.get(coordinates)
+      state.playerBoard[x][y] = 'hit'
+      if (updateShip) {
+        updateShip.hitCount += 1
+        if (updateShip.hitCount >= updateShip.size) {
+          state.playerShips.delete(coordinates)
+          msg = `Enemy shot at ${coordinateToDisplay([x, y])}: They sunk your ${coordinates}!`
+        } else {
+          state.playerShips.set(coordinates, updateShip)
+          msg = `Enemy shot at ${coordinateToDisplay([x, y])}: They hit!`
         }
-        validCoordinate = true
-    }
+      }
   }
   return msg
 }
@@ -144,6 +138,18 @@ export function remainingShips(ships: Map<ShipType, Ship>): boolean {
   return true
 }
 
+export function validCoordinates(board: Board): [number, number][] {
+  const validCoords: [number, number][] = []
+  for (let i = 0; i < board.length; i++) {
+    for (let j = 0; j < board.length; j++) {
+      if (board[i][j] !== 'hit' && board[i][j] !== 'miss') {
+        validCoords.push([i, j])
+      }
+    }
+  }
+  return validCoords
+}
+
 export function canPlaceShip(
   board: Board,
   boardSize: number,
@@ -200,7 +206,7 @@ export async function placePlayerShips(state: GameState) {
     let orientation = 0
 
     while (!shipPlaced) {
-      const key =  null//await readKey()
+      const key = null //await readKey()
       switch (key) {
         case 'up':
           col++
