@@ -1,16 +1,9 @@
 import { main } from './main'
 import { parseArgs } from 'util'
+import { GameSettings } from './types'
 
-export type GameConfig = {
-  enemyAI: boolean
-  boardSize: number
-  hideEnemy: boolean
-  ollamaBaseURL: string
-  ollamaModel: string
-}
-
-export function loadSettings(): GameConfig {
-  const config: GameConfig = {
+export function loadSettings(): GameSettings {
+  const config: GameSettings = {
     enemyAI: false,
     boardSize: 5,
     hideEnemy: true,

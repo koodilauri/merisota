@@ -1,11 +1,23 @@
 import { createGameState } from './GameState'
 import * as systems from './systems'
 import * as ui from './ui'
-import { loadConfig } from './config'
 import { Reader } from './Reader'
+import { GameSettings } from './types'
+import { getMove } from './ollama'
 
-export async function main(config: GameConfig) {
+const systemPrompt = `You are the Enemy Battleship AI.
+
+Rules:
+- Pick one coordinate form the existing State to fire
+- Do not output a coordinate not in State
+
+Output ONLY valid JSON:
+{"shot":[row,col]}
+No extra text.`
+
+export async function main(config: GameSettings) {
   let gameOver = false
+  let previousShot = 'Miss'
   const reader = new Reader()
   const state = createGameState(config.boardSize)
 
@@ -23,7 +35,7 @@ export async function main(config: GameConfig) {
   ui.printBoardSection('\nPlayer Board\n', state.playerBoard)
 
   while (!gameOver) {
-    console.log('enter target')
+    // console.log('enter target')
     // const raw2 = await reader.readNextLine()
     const raw = await ui.enterInput('Enter target (e.g. B7): ')
     const coords = systems.parseCoordinate(raw, state.boardSize)
@@ -31,7 +43,10 @@ export async function main(config: GameConfig) {
       const result = systems.playerShot(state, coords)
       if (result.success) {
         console.log(result.msg)
-        const computerResult = systems.computerTurn(state)
+        let target = undefined
+        if (config.enemyAI) target = await getMove(systemPrompt, systems.validCoordinates(state.playerBoard), previousShot)
+        const [computerResult, prevShot] = systems.computerTurn(state, target)
+        previousShot = prevShot
         console.log(computerResult)
         if (!systems.remainingShips(state.enemyShips)) gameOver = true
         if (!systems.remainingShips(state.playerShips)) gameOver = true

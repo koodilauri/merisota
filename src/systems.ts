@@ -35,18 +35,21 @@ export function playerShot(
   return { success: false, msg: 'Something went wrong with applying the shot' }
 }
 
-export function computerTurn(state: GameState): string {
+export function computerTurn(state: GameState, coord?: [number, number]): string[] {
   let msg = ''
+  let shotResult = ''
   const validTargets = validCoordinates(state.playerBoard)
-
-  const [x, y] = validTargets[Math.floor(Math.random() * validTargets.length)]
-
+  const [x, y] =
+    coord && validTargets.some(([r, c]) => r === coord[0] && c === coord[1])
+      ? coord
+      : validTargets[Math.floor(Math.random() * validTargets.length)]
   const cell = state.playerBoard[x][y]
   let updateShip: Ship | undefined = undefined
   switch (cell) {
     case 'empty':
       state.playerBoard[x][y] = 'miss'
       msg = `Enemy shot at ${coordinateToDisplay([x, y])}: They missed!`
+      shotResult = `Shot at ${[x, y]}: Miss!`
       break
     case 'miss':
     case 'hit':
@@ -59,13 +62,16 @@ export function computerTurn(state: GameState): string {
         if (updateShip.hitCount >= updateShip.size) {
           state.playerShips.delete(cell)
           msg = `Enemy shot at ${coordinateToDisplay([x, y])}: They sunk your ${cell}!`
+          shotResult = `Shot at ${[x, y]}: Sunk a ${cell}!`
+          
         } else {
           state.playerShips.set(cell, updateShip)
           msg = `Enemy shot at ${coordinateToDisplay([x, y])}: They hit!`
+          shotResult = `Shot at ${[x, y]}: Hit!`
         }
       }
   }
-  return msg
+  return [msg, shotResult]
 }
 export function placeShipRandomly(
   board: Board,
