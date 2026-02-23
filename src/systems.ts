@@ -38,10 +38,12 @@ export function playerShot(
 export function computerTurn(state: GameState): string {
   let msg = ''
   const validTargets = validCoordinates(state.playerBoard)
+
   const [x, y] = validTargets[Math.floor(Math.random() * validTargets.length)]
-  const coordinates = state.playerBoard[x][y]
+
+  const cell = state.playerBoard[x][y]
   let updateShip: Ship | undefined = undefined
-  switch (coordinates) {
+  switch (cell) {
     case 'empty':
       state.playerBoard[x][y] = 'miss'
       msg = `Enemy shot at ${coordinateToDisplay([x, y])}: They missed!`
@@ -50,15 +52,15 @@ export function computerTurn(state: GameState): string {
     case 'hit':
       break
     default:
-      updateShip = state.playerShips.get(coordinates)
+      updateShip = state.playerShips.get(cell)
       state.playerBoard[x][y] = 'hit'
       if (updateShip) {
         updateShip.hitCount += 1
         if (updateShip.hitCount >= updateShip.size) {
-          state.playerShips.delete(coordinates)
-          msg = `Enemy shot at ${coordinateToDisplay([x, y])}: They sunk your ${coordinates}!`
+          state.playerShips.delete(cell)
+          msg = `Enemy shot at ${coordinateToDisplay([x, y])}: They sunk your ${cell}!`
         } else {
-          state.playerShips.set(coordinates, updateShip)
+          state.playerShips.set(cell, updateShip)
           msg = `Enemy shot at ${coordinateToDisplay([x, y])}: They hit!`
         }
       }

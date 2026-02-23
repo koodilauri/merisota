@@ -2,24 +2,29 @@ import { createGameState } from './GameState'
 import * as systems from './systems'
 import * as ui from './ui'
 import { loadConfig } from './config'
+import { Reader } from './Reader'
 
-export async function main() {
+export async function main(config: GameConfig) {
   let gameOver = false
-  const config = loadConfig()
+  const reader = new Reader()
   const state = createGameState(config.boardSize)
 
   ui.printStartScreen()
   await ui.enterInput('Press any key to start!')
 
   systems.initGame(state)
-  if (process.stdin.isTTY) process.stdin.setRawMode(true)
   await systems.placePlayerShips(state)
-  if (process.stdin.isTTY) process.stdin.setRawMode(false)
+  // while (true) {
+  //   const nextKey = await reader.readNext(['up', 'down', 'left', 'right', 'return', 'space'])
+  //   console.log(nextKey)
+  // }
 
   ui.printBoardSection('\nEnemy Board\n', state.enemyBoard, config.hideEnemy)
   ui.printBoardSection('\nPlayer Board\n', state.playerBoard)
 
   while (!gameOver) {
+    console.log('enter target')
+    // const raw2 = await reader.readNextLine()
     const raw = await ui.enterInput('Enter target (e.g. B7): ')
     const coords = systems.parseCoordinate(raw, state.boardSize)
     if (coords) {
