@@ -4,17 +4,28 @@ import { ShipType, Ship, Board } from './types'
 export function playerShot(
   state: GameState,
   coordinates: [number, number]
-): { success: boolean; msg: string } {
+): { success: boolean; msg: string; shotResult: string } {
   let updateShip: Ship | undefined = undefined
 
   const cell = state.enemyBoard[coordinates[0]][coordinates[1]]
+  const message = {
+    success: false,
+    msg: 'Something went wrong with applying the shot',
+    shotResult: ''
+  }
   switch (cell) {
     case 'empty':
       state.enemyBoard[coordinates[0]][coordinates[1]] = 'miss'
-      return { success: true, msg: `You shot at ${coordinateToDisplay(coordinates)}: You miss!` }
+      message.success = true
+      message.msg = `You shot at ${coordinateToDisplay(coordinates)}: You miss!`
+      message.shotResult = `Shot at ${coordinates}: Miss!`
+      break
     case 'miss':
     case 'hit':
-      return { success: false, msg: 'Already shot there, try again' }
+      message.success = false
+      message.msg = 'Already shot there, try again'
+      message.shotResult = `Shot at ${coordinates}: Already shot there, pick another target.`
+      break
     default:
       updateShip = state.enemyShips.get(cell)
       state.enemyBoard[coordinates[0]][coordinates[1]] = 'hit'
@@ -22,17 +33,20 @@ export function playerShot(
         updateShip.hitCount += 1
         if (updateShip.hitCount >= updateShip.size) {
           state.enemyShips.delete(cell)
-          return {
-            success: true,
-            msg: `You shot at ${coordinateToDisplay(coordinates)}: Hit! You sunk my ${cell}!`
-          }
+          message.success = true
+          message.msg = `You shot at ${coordinateToDisplay(coordinates)}: Hit! You sunk my ${cell}!`
+          message.shotResult = `Shot at ${coordinates}: Sunk a ${cell}!`
+          break
         } else {
           state.enemyShips.set(cell, updateShip)
-          return { success: true, msg: `You shot at ${coordinateToDisplay(coordinates)}: Hit!` }
+          message.success = true
+          message.msg = `You shot at ${coordinateToDisplay(coordinates)}: Hit!`
+          message.shotResult = `Shot at ${coordinates}: Hit!`
+          break
         }
       }
   }
-  return { success: false, msg: 'Something went wrong with applying the shot' }
+  return message
 }
 
 export function computerTurn(state: GameState, coord?: [number, number]): string[] {
@@ -53,6 +67,7 @@ export function computerTurn(state: GameState, coord?: [number, number]): string
       break
     case 'miss':
     case 'hit':
+      shotResult = 'Already shot there, pick another target.'
       break
     default:
       updateShip = state.playerShips.get(cell)
@@ -63,7 +78,6 @@ export function computerTurn(state: GameState, coord?: [number, number]): string
           state.playerShips.delete(cell)
           msg = `Enemy shot at ${coordinateToDisplay([x, y])}: They sunk your ${cell}!`
           shotResult = `Shot at ${[x, y]}: Sunk a ${cell}!`
-          
         } else {
           state.playerShips.set(cell, updateShip)
           msg = `Enemy shot at ${coordinateToDisplay([x, y])}: They hit!`
@@ -109,14 +123,14 @@ export function initGame(state: GameState) {
 
   state.enemyShips.clear()
   state.playerShips.clear()
-  placeShipRandomly(state.enemyBoard, 'aircraft carrier', 5, state.enemyShips, state.boardSize)
-  placeShipRandomly(state.enemyBoard, 'battleship', 4, state.enemyShips, state.boardSize)
+  // placeShipRandomly(state.enemyBoard, 'aircraft carrier', 5, state.enemyShips, state.boardSize)
+  // placeShipRandomly(state.enemyBoard, 'battleship', 4, state.enemyShips, state.boardSize)
   placeShipRandomly(state.enemyBoard, 'destroyer', 3, state.enemyShips, state.boardSize)
   placeShipRandomly(state.enemyBoard, 'submarine', 3, state.enemyShips, state.boardSize)
   placeShipRandomly(state.enemyBoard, 'patrol boat', 2, state.enemyShips, state.boardSize)
 
-  placeShipRandomly(state.playerBoard, 'aircraft carrier', 5, state.playerShips, state.boardSize)
-  placeShipRandomly(state.playerBoard, 'battleship', 4, state.playerShips, state.boardSize)
+  // placeShipRandomly(state.playerBoard, 'aircraft carrier', 5, state.playerShips, state.boardSize)
+  // placeShipRandomly(state.playerBoard, 'battleship', 4, state.playerShips, state.boardSize)
   placeShipRandomly(state.playerBoard, 'destroyer', 3, state.playerShips, state.boardSize)
   placeShipRandomly(state.playerBoard, 'submarine', 3, state.playerShips, state.boardSize)
   placeShipRandomly(state.playerBoard, 'patrol boat', 2, state.playerShips, state.boardSize)

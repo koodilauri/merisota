@@ -5,6 +5,7 @@ import { GameSettings } from './types'
 export function loadSettings(): GameSettings {
   const config: GameSettings = {
     enemyAI: false,
+    playerAI: false,
     boardSize: 5,
     hideEnemy: true,
     ollamaBaseURL: process.env.OLLAMA_BASE_URL || 'http://127.0.0.1:11434',
@@ -17,6 +18,7 @@ export function loadSettings(): GameSettings {
       'board-size': { type: 'string' },
       'show-enemies': { type: 'boolean' },
       'enemy-ai': { type: 'boolean' },
+      'player-ai': { type: 'boolean' },
       'ollama-url': { type: 'string' },
       'ollama-model': { type: 'string' }
     },
@@ -33,6 +35,9 @@ export function loadSettings(): GameSettings {
   }
   if (values['enemy-ai']) {
     config.enemyAI = true
+  }
+  if (values['player-ai']) {
+    config.playerAI = true
   }
   if (values['ollama-url']) {
     config.ollamaBaseURL = String(values['ollama-url'])

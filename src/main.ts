@@ -17,7 +17,8 @@ No extra text.`
 
 export async function main(config: GameSettings) {
   let gameOver = false
-  let previousShot = 'Miss'
+  let previousEnemyShot = 'Miss'
+  let previousPlayerShot = 'Miss'
   const reader = new Reader()
   const state = createGameState(config.boardSize)
 
@@ -37,16 +38,31 @@ export async function main(config: GameSettings) {
   while (!gameOver) {
     // console.log('enter target')
     // const raw2 = await reader.readNextLine()
-    const raw = await ui.enterInput('Enter target (e.g. B7): ')
-    const coords = systems.parseCoordinate(raw, state.boardSize)
-    if (coords) {
-      const result = systems.playerShot(state, coords)
+    let playerTarget = undefined
+    if (config.playerAI) {
+      playerTarget = await getMove(
+        systemPrompt,
+        systems.validCoordinates(state.enemyBoard),
+        previousPlayerShot
+      )
+    } else {
+      const raw = await ui.enterInput('Enter target (e.g. B7): ')
+      playerTarget = systems.parseCoordinate(raw, state.boardSize)
+    }
+    if (playerTarget) {
+      const result = systems.playerShot(state, playerTarget)
       if (result.success) {
+        previousPlayerShot = result.shotResult
+        let enemyTarget = undefined
+        if (config.enemyAI)
+          enemyTarget = await getMove(
+            systemPrompt,
+            systems.validCoordinates(state.playerBoard),
+            previousEnemyShot
+          )
+        const [computerResult, prevShot] = systems.computerTurn(state, enemyTarget)
+        previousEnemyShot = prevShot
         console.log(result.msg)
-        let target = undefined
-        if (config.enemyAI) target = await getMove(systemPrompt, systems.validCoordinates(state.playerBoard), previousShot)
-        const [computerResult, prevShot] = systems.computerTurn(state, target)
-        previousShot = prevShot
         console.log(computerResult)
         if (!systems.remainingShips(state.enemyShips)) gameOver = true
         if (!systems.remainingShips(state.playerShips)) gameOver = true

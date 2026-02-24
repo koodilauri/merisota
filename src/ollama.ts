@@ -1,4 +1,4 @@
-import { ChatMessage, ChatOptions} from './types'
+import { ChatMessage, ChatOptions } from './types'
 
 export async function ollamaChat(messages: ChatMessage[], options: ChatOptions): Promise<string> {
   const response = await fetch('http://localhost:11434/api/chat', {
@@ -22,15 +22,23 @@ export async function ollamaChat(messages: ChatMessage[], options: ChatOptions):
   return data.message.content
 }
 
-export async function getMove(systemPrompt: string, coordinates: [number, number][], previousShot: string) {
+export async function getMove(
+  systemPrompt: string,
+  coordinates: [number, number][],
+  previousShot: string
+) {
   const result = await ollamaChat(
     [
-      { role: "system", content: systemPrompt },
-      { role: "user", content: `State:\n${JSON.stringify(coordinates)}\nPrevous shot:\n${JSON.stringify(previousShot)}\nSelect next shot.` }
+      { role: 'system', content: systemPrompt },
+      {
+        role: 'user',
+        content: `State:\n${JSON.stringify(coordinates)}\nPrevous shot:\n${JSON.stringify(previousShot)}\nSelect next shot.`
+      }
     ],
-    { model: "llama3", temperature: 0 }
-  );
+    { model: 'llama3', temperature: 0.3 }
+  )
 
-  const parsed = JSON.parse(result);
-  return parsed.shot;
+  const parsed = JSON.parse(result)
+  console.log(`State:\n${JSON.stringify(coordinates)}\nPrevous shot:\n${JSON.stringify(previousShot)}\nSelect next shot.`, parsed)
+  return parsed.shot
 }

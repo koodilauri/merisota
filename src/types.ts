@@ -7,6 +7,7 @@ export type Ship = {
 }
 export type GameSettings = {
   enemyAI: boolean
+  playerAI: boolean
   boardSize: number
   hideEnemy: boolean
   ollamaBaseURL: string
