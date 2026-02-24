@@ -1,5 +1,9 @@
 import { createGameState } from './GameState'
-import * as systems from './systems'
+import { initGame } from './systems/initGame'
+import { playerShot } from './systems/playerShot'
+import { computerTurn } from './systems/computerTurn'
+import { placePlayerShips } from './utils/placeShip'
+import * as coords from './utils/coords'
 import * as ui from './ui'
 import { Reader } from './Reader'
 import { GameSettings } from './types'
@@ -27,8 +31,8 @@ export async function main(config: GameSettings) {
   ui.printStartScreen()
   await ui.enterInput('Press any key to start!')
 
-  systems.initGame(state)
-  await systems.placePlayerShips(state)
+  initGame(state)
+  await placePlayerShips(state)
   // while (true) {
   //   const nextKey = await reader.readNext(['up', 'down', 'left', 'right', 'return', 'space'])
   //   console.log(nextKey)
@@ -45,16 +49,16 @@ export async function main(config: GameSettings) {
     if (config.playerAI) {
       playerTarget = await getMove(
         systemPrompt,
-        systems.validCoordinates(state.enemyBoard),
+        coords.validCoordinates(state.enemyBoard),
         previousPlayerShot
       )
     } else {
       raw = await ui.enterInput('Enter target (e.g. B7): ')
-      const parsed = systems.parseCoordinate(raw, state.boardSize)
+      const parsed = coords.parseCoordinate(raw, state.boardSize)
       playerTarget = parsed === null ? undefined : parsed
     }
     if (playerTarget !== undefined) {
-      const playerResult = systems.playerShot(state, playerTarget)
+      const playerResult = playerShot(state, playerTarget)
       if (playerResult.ok) {
         previousPlayerShot = playerResult.shotResult
         let computerTurnResult: { ok: boolean; msg: string; shotResult: string } | null = null
@@ -63,11 +67,11 @@ export async function main(config: GameSettings) {
           if (config.enemyAI) {
             enemyTarget = await getMove(
               systemPrompt,
-              systems.validCoordinates(state.playerBoard),
+              coords.validCoordinates(state.playerBoard),
               previousEnemyShot
             )
           }
-          computerTurnResult = systems.computerTurn(state, enemyTarget)
+          computerTurnResult = computerTurn(state, enemyTarget)
           if (config.enemyAI && !computerTurnResult.ok && enemyTarget) {
             console.log(
               'Error parsing enemy coordinates. Unknown coordinates from AI:',
@@ -87,8 +91,8 @@ export async function main(config: GameSettings) {
         previousEnemyShot = computerShotResult
         console.log(playerResult.msg)
         console.log(computerMessage)
-        if (!systems.remainingShips(state.enemyShips)) gameOver = true
-        if (!systems.remainingShips(state.playerShips)) gameOver = true
+        if (state.enemyShips.size === 0) gameOver = true
+        if (state.playerShips.size === 0) gameOver = true
 
         ui.printBoardSection('\nEnemy Board\n', state.enemyBoard, config.hideEnemy)
         ui.printBoardSection('\nPlayer Board\n', state.playerBoard)
@@ -100,11 +104,11 @@ export async function main(config: GameSettings) {
     }
     if (gameOver) {
       console.log('=== GAME OVER ===')
-      if (!systems.remainingShips(state.enemyShips) && !systems.remainingShips(state.playerShips)) {
+      if (state.enemyShips.size === state.playerShips.size) {
         console.log('=== TIE GAME! ===')
       } else {
-        if (!systems.remainingShips(state.enemyShips)) console.log('=== YOU WIN! ===')
-        if (!systems.remainingShips(state.playerShips)) console.log('=== YOU LOSE! ===')
+        if (state.enemyShips.size === 0) console.log('=== YOU WIN! ===')
+        if (state.playerShips.size === 0) console.log('=== YOU LOSE! ===')
       }
       const input = await ui.enterInput('Enter (q) to quit or press Enter for new game.')
       if (input === 'q') {
@@ -113,7 +117,7 @@ export async function main(config: GameSettings) {
         return
       } else {
         gameOver = false
-        systems.initGame(state)
+        initGame(state)
         ui.printBoardSection('\nEnemy Board\n', state.enemyBoard, config.hideEnemy)
         ui.printBoardSection('\nPlayer Board\n', state.playerBoard)
       }
