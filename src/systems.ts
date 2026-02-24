@@ -80,7 +80,7 @@ export function playerShot(
 export function computerTurn(
   state: GameState,
   coord?: [number, number]
-): { ok: boolean; msg: string; shotResult: string } | null {
+): { ok: boolean; msg: string; shotResult: string } {
   const message = {
     ok: false,
     msg: '',
@@ -92,8 +92,9 @@ export function computerTurn(
   if (coord) {
     const isValid = validTargets.some(([r, c]) => r === coord[0] && c === coord[1])
     if (!isValid) {
-      // Invalid coordinate supplied (e.g. from AI) – signal caller to retry.
-      return null
+      message.ok = false
+      message.msg = `Enemy AI had invalid coordinates ${coord}`
+      message.shotResult = `invalid coordinates ${coord}`
     }
     target = coord
   } else {

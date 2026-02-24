@@ -68,16 +68,16 @@ export async function main(config: GameSettings) {
             )
           }
           computerTurnResult = systems.computerTurn(state, enemyTarget)
-          if (config.enemyAI && computerTurnResult === null && enemyTarget) {
+          if (config.enemyAI && !computerTurnResult.ok && enemyTarget) {
             console.log(
               'Error parsing enemy coordinates. Unknown coordinates from AI:',
-              JSON.stringify(enemyTarget)
+              enemyTarget,
+              computerTurnResult
             )
           }
         } while (config.enemyAI && computerTurnResult === null)
 
         if (!computerTurnResult) {
-          // Should not happen for non-AI, but guard just in case.
           console.log('Enemy turn could not be resolved due to invalid coordinates.')
           continue
         }

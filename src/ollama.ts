@@ -35,7 +35,7 @@ export async function getMove(
         content: `State:\n${JSON.stringify(coordinates)}\nPrevous shot:\n${JSON.stringify(previousShot)}\nSelect next shot.`
       }
     ],
-    { model: 'llama3', temperature: 0.3 }
+    { model: 'llama3', temperature: 0.5 }
   )
 
   const parsed = JSON.parse(result)
