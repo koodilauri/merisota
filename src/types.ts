@@ -13,6 +13,18 @@ export type GameSettings = {
   ollamaBaseURL: string
   ollamaModel: string
 }
+
+export type GenericShotResult =
+  | {
+      kind: 'miss' | 'repeat'
+      coords: [number, number]
+    }
+  | {
+      kind: 'hit' | 'sunk'
+      coords: [number, number]
+      ship: ShipType
+    }
+
 export type ChatMessage = {
   role: 'system' | 'user' | 'assistant'
   content: string

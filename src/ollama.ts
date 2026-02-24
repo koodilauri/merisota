@@ -39,6 +39,6 @@ export async function getMove(
   )
 
   const parsed = JSON.parse(result)
-  console.log(`State:\n${JSON.stringify(coordinates)}\nPrevous shot:\n${JSON.stringify(previousShot)}\nSelect next shot.`, parsed)
+  // console.log(`State:\n${JSON.stringify(coordinates)}\nPrevous shot:\n${JSON.stringify(previousShot)}\nSelect next shot.`, parsed)
   return parsed.shot
 }

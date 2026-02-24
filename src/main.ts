@@ -5,11 +5,13 @@ import { Reader } from './Reader'
 import { GameSettings } from './types'
 import { getMove } from './ollama'
 
-const systemPrompt = `You are the Enemy Battleship AI.
+const systemPrompt = `You are a Battleship AI.
 
 Rules:
 - Pick one coordinate form the existing State to fire
-- Do not output a coordinate not in State
+- Do not output a coordinate not found in State
+- If the previous shot was a hit, try to target nearby coordinates if possible
+- DO NOT PICK THE COORDINATE FROM THE PREVIOUS SHOT
 
 Output ONLY valid JSON:
 {"shot":[row,col]}
@@ -38,7 +40,8 @@ export async function main(config: GameSettings) {
   while (!gameOver) {
     // console.log('enter target')
     // const raw2 = await reader.readNextLine()
-    let playerTarget = undefined
+    let playerTarget: [number, number] | undefined = undefined
+    let raw: string | undefined
     if (config.playerAI) {
       playerTarget = await getMove(
         systemPrompt,
@@ -46,34 +49,54 @@ export async function main(config: GameSettings) {
         previousPlayerShot
       )
     } else {
-      const raw = await ui.enterInput('Enter target (e.g. B7): ')
-      playerTarget = systems.parseCoordinate(raw, state.boardSize)
+      raw = await ui.enterInput('Enter target (e.g. B7): ')
+      const parsed = systems.parseCoordinate(raw, state.boardSize)
+      playerTarget = parsed === null ? undefined : parsed
     }
-    if (playerTarget) {
-      const result = systems.playerShot(state, playerTarget)
-      if (result.success) {
-        previousPlayerShot = result.shotResult
-        let enemyTarget = undefined
-        if (config.enemyAI)
-          enemyTarget = await getMove(
-            systemPrompt,
-            systems.validCoordinates(state.playerBoard),
-            previousEnemyShot
-          )
-        const [computerResult, prevShot] = systems.computerTurn(state, enemyTarget)
-        previousEnemyShot = prevShot
-        console.log(result.msg)
-        console.log(computerResult)
+    if (playerTarget !== undefined) {
+      const playerResult = systems.playerShot(state, playerTarget)
+      if (playerResult.ok) {
+        previousPlayerShot = playerResult.shotResult
+        let computerTurnResult: { ok: boolean; msg: string; shotResult: string } | null = null
+        do {
+          let enemyTarget: [number, number] | undefined = undefined
+          if (config.enemyAI) {
+            enemyTarget = await getMove(
+              systemPrompt,
+              systems.validCoordinates(state.playerBoard),
+              previousEnemyShot
+            )
+          }
+          computerTurnResult = systems.computerTurn(state, enemyTarget)
+          if (config.enemyAI && computerTurnResult === null && enemyTarget) {
+            console.log(
+              'Error parsing enemy coordinates. Unknown coordinates from AI:',
+              JSON.stringify(enemyTarget)
+            )
+          }
+        } while (config.enemyAI && computerTurnResult === null)
+
+        if (!computerTurnResult) {
+          // Should not happen for non-AI, but guard just in case.
+          console.log('Enemy turn could not be resolved due to invalid coordinates.')
+          continue
+        }
+
+        const computerMessage = computerTurnResult.msg
+        const computerShotResult = computerTurnResult.shotResult
+        previousEnemyShot = computerShotResult
+        console.log(playerResult.msg)
+        console.log(computerMessage)
         if (!systems.remainingShips(state.enemyShips)) gameOver = true
         if (!systems.remainingShips(state.playerShips)) gameOver = true
 
         ui.printBoardSection('\nEnemy Board\n', state.enemyBoard, config.hideEnemy)
         ui.printBoardSection('\nPlayer Board\n', state.playerBoard)
       } else {
-        console.log(result.msg)
+        console.log(playerResult.msg)
       }
     } else {
-      console.log('Error parsing coordinates. Unknown coordinates:', raw)
+      console.log('Error parsing coordinates. Unknown coordinates:', raw ?? '(none)')
     }
     if (gameOver) {
       console.log('=== GAME OVER ===')

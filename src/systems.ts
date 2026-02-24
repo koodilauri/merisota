@@ -1,91 +1,132 @@
 import { GameState } from './GameState'
 import { ShipType, Ship, Board } from './types'
+import { GenericShotResult } from './types'
+
+function applyShotToBoard(
+  board: Board,
+  ships: Map<ShipType, Ship>,
+  coords: [number, number]
+): GenericShotResult {
+  const [row, col] = coords
+  const cell = board[row][col]
+
+  switch (cell) {
+    case 'empty':
+      board[row][col] = 'miss'
+      return { kind: 'miss', coords }
+    case 'miss':
+    case 'hit':
+      return { kind: 'repeat', coords }
+    default: {
+      const shipName = cell
+      const ship = ships.get(shipName)
+      board[row][col] = 'hit'
+
+      if (!ship) {
+        return { kind: 'hit', coords, ship: shipName }
+      }
+
+      ship.hitCount += 1
+      if (ship.hitCount >= ship.size) {
+        ships.delete(shipName)
+        return { kind: 'sunk', coords, ship: shipName }
+      } else {
+        ships.set(shipName, ship)
+        return { kind: 'hit', coords, ship: shipName }
+      }
+    }
+  }
+}
 
 export function playerShot(
   state: GameState,
   coordinates: [number, number]
-): { success: boolean; msg: string; shotResult: string } {
-  let updateShip: Ship | undefined = undefined
+): { ok: boolean; msg: string; shotResult: string } {
+  const outcome = applyShotToBoard(state.enemyBoard, state.enemyShips, coordinates)
+  const coordDisplay = coordinateToDisplay(coordinates)
 
-  const cell = state.enemyBoard[coordinates[0]][coordinates[1]]
   const message = {
-    success: false,
+    ok: false,
     msg: 'Something went wrong with applying the shot',
     shotResult: ''
   }
-  switch (cell) {
-    case 'empty':
-      state.enemyBoard[coordinates[0]][coordinates[1]] = 'miss'
-      message.success = true
-      message.msg = `You shot at ${coordinateToDisplay(coordinates)}: You miss!`
+
+  switch (outcome.kind) {
+    case 'miss':
+      message.ok = true
+      message.msg = `You shot at ${coordDisplay}: You miss!`
       message.shotResult = `Shot at ${coordinates}: Miss!`
       break
-    case 'miss':
-    case 'hit':
-      message.success = false
+    case 'repeat':
+      message.ok = false
       message.msg = 'Already shot there, try again'
       message.shotResult = `Shot at ${coordinates}: Already shot there, pick another target.`
       break
-    default:
-      updateShip = state.enemyShips.get(cell)
-      state.enemyBoard[coordinates[0]][coordinates[1]] = 'hit'
-      if (updateShip) {
-        updateShip.hitCount += 1
-        if (updateShip.hitCount >= updateShip.size) {
-          state.enemyShips.delete(cell)
-          message.success = true
-          message.msg = `You shot at ${coordinateToDisplay(coordinates)}: Hit! You sunk my ${cell}!`
-          message.shotResult = `Shot at ${coordinates}: Sunk a ${cell}!`
-          break
-        } else {
-          state.enemyShips.set(cell, updateShip)
-          message.success = true
-          message.msg = `You shot at ${coordinateToDisplay(coordinates)}: Hit!`
-          message.shotResult = `Shot at ${coordinates}: Hit!`
-          break
-        }
-      }
+    case 'hit':
+      message.ok = true
+      message.msg = `You shot at ${coordDisplay}: Hit!`
+      message.shotResult = `Shot at ${coordinates}: Hit!`
+      break
+    case 'sunk':
+      message.ok = true
+      message.msg = `You shot at ${coordDisplay}: Hit! You sunk my ${outcome.ship}!`
+      message.shotResult = `Shot at ${coordinates}: Sunk a ${outcome.ship}!`
+      break
   }
+
   return message
 }
 
-export function computerTurn(state: GameState, coord?: [number, number]): string[] {
-  let msg = ''
-  let shotResult = ''
-  const validTargets = validCoordinates(state.playerBoard)
-  const [x, y] =
-    coord && validTargets.some(([r, c]) => r === coord[0] && c === coord[1])
-      ? coord
-      : validTargets[Math.floor(Math.random() * validTargets.length)]
-  const cell = state.playerBoard[x][y]
-  let updateShip: Ship | undefined = undefined
-  switch (cell) {
-    case 'empty':
-      state.playerBoard[x][y] = 'miss'
-      msg = `Enemy shot at ${coordinateToDisplay([x, y])}: They missed!`
-      shotResult = `Shot at ${[x, y]}: Miss!`
-      break
-    case 'miss':
-    case 'hit':
-      shotResult = 'Already shot there, pick another target.'
-      break
-    default:
-      updateShip = state.playerShips.get(cell)
-      state.playerBoard[x][y] = 'hit'
-      if (updateShip) {
-        updateShip.hitCount += 1
-        if (updateShip.hitCount >= updateShip.size) {
-          state.playerShips.delete(cell)
-          msg = `Enemy shot at ${coordinateToDisplay([x, y])}: They sunk your ${cell}!`
-          shotResult = `Shot at ${[x, y]}: Sunk a ${cell}!`
-        } else {
-          state.playerShips.set(cell, updateShip)
-          msg = `Enemy shot at ${coordinateToDisplay([x, y])}: They hit!`
-          shotResult = `Shot at ${[x, y]}: Hit!`
-        }
-      }
+export function computerTurn(
+  state: GameState,
+  coord?: [number, number]
+): { ok: boolean; msg: string; shotResult: string } | null {
+  const message = {
+    ok: false,
+    msg: '',
+    shotResult: ''
   }
-  return [msg, shotResult]
+  const validTargets = validCoordinates(state.playerBoard)
+
+  let target: [number, number]
+  if (coord) {
+    const isValid = validTargets.some(([r, c]) => r === coord[0] && c === coord[1])
+    if (!isValid) {
+      // Invalid coordinate supplied (e.g. from AI) – signal caller to retry.
+      return null
+    }
+    target = coord
+  } else {
+    target = validTargets[Math.floor(Math.random() * validTargets.length)]
+  }
+
+  const outcome = applyShotToBoard(state.playerBoard, state.playerShips, target)
+  const coordDisplay = coordinateToDisplay(target)
+
+  switch (outcome.kind) {
+    case 'miss':
+      message.ok = true
+      message.msg = `Enemy shot at ${coordDisplay}: They missed!`
+      message.shotResult = `Shot at ${target}: Miss!`
+      break
+    case 'repeat':
+      message.ok = false
+      message.msg = 'Enemy tried a coordinate that was already targeted.'
+      message.shotResult = 'Already shot there, pick another target.'
+      break
+    case 'hit':
+      message.ok = true
+      message.msg = `Enemy shot at ${coordDisplay}: They hit!`
+      message.shotResult = `Shot at ${target}: Hit!`
+      break
+    case 'sunk':
+      message.ok = true
+      message.msg = `Enemy shot at ${coordDisplay}: They sunk your ${outcome.ship}!`
+      message.shotResult = `Shot at ${target}: Sunk a ${outcome.ship}!`
+      break
+  }
+
+  return message
 }
 export function placeShipRandomly(
   board: Board,
@@ -213,7 +254,7 @@ export function placeShipAt(
 }
 
 export async function placePlayerShips(state: GameState) {
-  const ships = [
+  const ships: { name: ShipType; size: number }[] = [
     { name: 'aircraft carrier', size: 5 },
     { name: 'battleship', size: 4 },
     { name: 'destroyer', size: 3 },
@@ -223,41 +264,12 @@ export async function placePlayerShips(state: GameState) {
 
   for (const ship of ships) {
     let shipPlaced = false
-    let row = 0
-    let col = 0
-    let orientation = 0
+    const row = 0
+    const col = 0
+    const orientation = 0
 
     while (!shipPlaced) {
-      const key = null //await readKey()
-      switch (key) {
-        case 'up':
-          col++
-          break
-        case 'down':
-          col--
-          break
-        case 'left':
-          row--
-          break
-        case 'right':
-          row++
-          break
-        case 'space':
-          orientation = 1 - orientation
-          break
-        case 'enter':
-          if (canPlaceShip(state.playerBoard, state.boardSize, row, col, ship.size, orientation)) {
-            placeShipAt(
-              state.playerBoard,
-              state.playerShips,
-              ship.name,
-              row,
-              col,
-              ship.size,
-              orientation
-            )
-          }
-      }
+      // TODO: Implement interactive ship placement with real key input.
       shipPlaced = true
     }
   }
