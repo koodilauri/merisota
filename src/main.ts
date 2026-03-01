@@ -2,6 +2,7 @@ import { createGameState } from './GameState'
 import { initGame } from './systems/initGame'
 import { playerShot } from './systems/playerShot'
 import { computerTurn } from './systems/computerTurn'
+import { saveGameLog } from './systems/saveGameLog'
 import { placePlayerShips } from './utils/placeShip'
 import * as coords from './utils/coords'
 import * as ui from './ui'
@@ -94,7 +95,7 @@ export async function main(config: GameSettings) {
     }
     if (gameOver) {
       ui.gameOverScreen(state)
-      console.log(state.gameLog) // testing
+      saveGameLog(state.gameLog) // testing
       const input = await ui.enterInput('Enter (q) to quit or press Enter for new game.')
       if (input === 'q') {
         console.log('Thanks for playing! See you again.')
