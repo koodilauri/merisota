@@ -1,4 +1,4 @@
-import { ShipType, Ship, Board } from './types'
+import { ShipType, Ship, Board, GameTurn } from './types'
 
 export interface GameState {
   playerShips: Map<ShipType, Ship>
@@ -6,6 +6,12 @@ export interface GameState {
   playerBoard: Board
   enemyBoard: Board
   boardSize: number
+  playerTargets: [number, number][]
+  enemyTargets: [number, number][]
+  playerHits: [number, number][]
+  enemyHits: [number, number][]
+  gameLog: GameTurn[]
+  
 }
 
 export function createGameState(boardSize: number): GameState {
@@ -18,7 +24,12 @@ export function createGameState(boardSize: number): GameState {
     enemyShips: enemyShips,
     enemyBoard: enemyBoard,
     playerBoard: playerBoard,
-    boardSize: boardSize
+    boardSize: boardSize,
+    playerTargets: [],
+    enemyTargets: [],
+    playerHits: [],
+    enemyHits: [],
+    gameLog: []
   }
 }
 

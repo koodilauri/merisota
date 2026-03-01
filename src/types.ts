@@ -14,6 +14,12 @@ export type GameSettings = {
   ollamaModel: string
 }
 
+export type GameTurn = {
+  coords: [number, number]
+  side: 'player' | 'enemy'
+  result: string
+}
+
 export type GenericShotResult =
   | {
       kind: 'miss' | 'repeat'
