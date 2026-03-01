@@ -5,7 +5,7 @@ import type { Ship, ShipType, Board } from '../types'
 const FLEET: { name: ShipType; size: number }[] = [
   { name: 'destroyer', size: 3 },
   { name: 'submarine', size: 3 },
-  { name: 'patrol boat', size: 2 },
+  { name: 'patrol boat', size: 2 }
   // { name: 'battleship', size: 4 },
   // { name: 'aircraft carrier', size: 5 }
 ]
@@ -21,11 +21,7 @@ function clearBoards(state: GameState): void {
   state.playerShips.clear()
 }
 
-function placeFleet(
-  board: Board,
-  ships: Map<ShipType, Ship>,
-  boardSize: number
-): void {
+function placeFleet(board: Board, ships: Map<ShipType, Ship>, boardSize: number): void {
   for (const { name, size } of FLEET) {
     placeShipRandomly(board, name, size, ships, boardSize)
   }

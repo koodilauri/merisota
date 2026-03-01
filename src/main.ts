@@ -6,7 +6,7 @@ import { placePlayerShips } from './utils/placeShip'
 import * as coords from './utils/coords'
 import * as ui from './ui'
 import { Reader } from './Reader'
-import { GameSettings } from './types'
+import { GameSettings, TurnResult } from './types'
 import { getMove } from './ollama'
 
 const systemPrompt = `You are a Battleship AI.
@@ -32,7 +32,7 @@ export async function main(config: GameSettings) {
   await ui.enterInput('Press any key to start!')
 
   initGame(state)
-  await placePlayerShips(state)
+  // await placePlayerShips(state)
   // while (true) {
   //   const nextKey = await reader.readNext(['up', 'down', 'left', 'right', 'return', 'space'])
   //   console.log(nextKey)
@@ -61,9 +61,10 @@ export async function main(config: GameSettings) {
       const playerResult = playerShot(state, playerTarget)
       if (playerResult.ok) {
         previousPlayerShot = playerResult.shotResult
-        let computerTurnResult: { ok: boolean; msg: string; shotResult: string } | null = null
+        let computerTurnResult: TurnResult
+        let enemyTarget: [number, number] | undefined
         do {
-          let enemyTarget: [number, number] | undefined = undefined
+          enemyTarget = undefined
           if (config.enemyAI) {
             enemyTarget = await getMove(
               systemPrompt,
@@ -79,15 +80,10 @@ export async function main(config: GameSettings) {
               computerTurnResult
             )
           }
-        } while (config.enemyAI && computerTurnResult === null)
+        } while (config.enemyAI && !computerTurnResult.ok && enemyTarget)
 
-        if (!computerTurnResult) {
-          console.log('Enemy turn could not be resolved due to invalid coordinates.')
-          continue
-        }
-
-        const computerMessage = computerTurnResult.msg
-        const computerShotResult = computerTurnResult.shotResult
+        const computerMessage = computerTurnResult.printMsg
+        const computerShotResult = computerTurnResult.logMsg
         previousEnemyShot = computerShotResult
         console.log(playerResult.msg)
         console.log(computerMessage)

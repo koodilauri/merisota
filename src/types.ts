@@ -35,3 +35,8 @@ export type ChatOptions = {
   temperature?: number
   stream?: boolean
 }
+export type TurnResult = {
+  ok: boolean
+  printMsg: string
+  logMsg: string
+}
