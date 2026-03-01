@@ -1,0 +1,5 @@
+export { initGame } from './initGame'
+export { playerShot } from './playerShot'
+export { computerTurn } from './computerTurn'
+export { parseCoordinate, coordinateToDisplay, validCoordinates } from '../utils/coords'
+export { remainingShips } from '../utils/ships'

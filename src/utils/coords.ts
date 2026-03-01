@@ -1,3 +1,5 @@
+import type { Board } from '../types'
+
 export function parseCoordinate(input: string, boardSize: number): [number, number] | null {
   const match = input
     .trim()
