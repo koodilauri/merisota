@@ -1,42 +1,71 @@
 import { GameState } from '../GameState'
 import { applyShotToBoard } from '../utils/applyShot'
-import { coordinateToDisplay } from '../utils/coords'
+import { coordinateToDisplay, validCoordinates } from '../utils/coords'
+import { TurnResult, GenericShotResult } from '../types'
 
-export function playerShot(
-  state: GameState,
-  coordinates: [number, number]
-): { ok: boolean; msg: string; shotResult: string } {
-  const outcome = applyShotToBoard(state.enemyBoard, state.enemyShips, coordinates)
-  const coordDisplay = coordinateToDisplay(coordinates)
+export function playerShot(state: GameState, coords: [number, number]): TurnResult {
+  const outcome = applyShotToBoard(state.enemyBoard, state.enemyShips, coords)
+  const message = playerShotMsg(outcome, coords)
+  updatePlayerState(state, coords, message.logMsg)
+  console.log(message.printMsg)
 
+  return message
+}
+
+export function playerShotMsg(outcome: GenericShotResult, coordNumbers: [number, number]) {
   const message = {
     ok: false,
-    msg: 'Something went wrong with applying the shot',
-    shotResult: ''
+    printMsg: 'Something went wrong with applying the shot',
+    logMsg: ''
   }
+  const coordDisplay = coordinateToDisplay(coordNumbers)
 
   switch (outcome.kind) {
     case 'miss':
       message.ok = true
-      message.msg = `You shot at ${coordDisplay}: You miss!`
-      message.shotResult = `Shot at ${coordinates}: Miss!`
+      message.printMsg = `You shot at ${coordDisplay}: You miss!`
+      message.logMsg = `Miss`
       break
     case 'repeat':
       message.ok = false
-      message.msg = 'Already shot there, try again'
-      message.shotResult = `Shot at ${coordinates}: Already shot there, pick another target.`
+      message.printMsg = 'Already shot there, try again'
+      message.logMsg = `Repeat`
       break
     case 'hit':
       message.ok = true
-      message.msg = `You shot at ${coordDisplay}: Hit!`
-      message.shotResult = `Shot at ${coordinates}: Hit!`
+      message.printMsg = `You shot at ${coordDisplay}: Hit!`
+      message.logMsg = `Hit a ${outcome.ship}`
       break
     case 'sunk':
       message.ok = true
-      message.msg = `You shot at ${coordDisplay}: Hit! You sunk my ${outcome.ship}!`
-      message.shotResult = `Shot at ${coordinates}: Sunk a ${outcome.ship}!`
+      message.printMsg = `You shot at ${coordDisplay}: Hit! You sunk my ${outcome.ship}!`
+      message.logMsg = `Sunk a ${outcome.ship}`
       break
   }
-
   return message
+}
+
+// export function playerTurn(state: GameState, coords: [number, number]): TurnResult {
+
+//   const outcome = applyShotToBoard(state.enemyBoard, state.enemyShips, coords)
+//   const message = playerShotMsg(outcome, coords)
+//   updatePlayerState(state, coords, message.logMsg)
+//   ui.printMessage(message)
+
+//   return message
+
+// }
+
+export function updatePlayerState(
+  state: GameState,
+  coords: [number, number],
+  result: string
+): void {
+  state.playerHits.push(coords)
+  state.playerTargets = validCoordinates(state.enemyBoard)
+  state.gameLog.push({
+    coords: coords,
+    side: 'player',
+    result: result
+  })
 }

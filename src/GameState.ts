@@ -11,7 +11,6 @@ export interface GameState {
   playerHits: [number, number][]
   enemyHits: [number, number][]
   gameLog: GameTurn[]
-  
 }
 
 export function createGameState(boardSize: number): GameState {

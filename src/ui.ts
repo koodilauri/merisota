@@ -1,6 +1,7 @@
 import readline from 'readline'
 
 import { Board } from './types'
+import { GameState } from './GameState'
 
 export function printBoardSection(title: string, board: Board, hidden = false) {
   const header = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J']
@@ -63,4 +64,14 @@ export function enterInput(message: string): Promise<string> {
 
 export function closeInput(): void {
   rl.close()
+}
+
+export async function gameOverScreen(state: GameState) {
+  console.log('=== GAME OVER ===')
+  if (state.enemyShips.size === state.playerShips.size) {
+    console.log('=== TIE GAME! ===')
+  } else {
+    if (state.enemyShips.size === 0) console.log('=== YOU WIN! ===')
+    if (state.playerShips.size === 0) console.log('=== YOU LOSE! ===')
+  }
 }

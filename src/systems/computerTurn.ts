@@ -18,9 +18,20 @@ export function computerTurn(state: GameState, coord?: [number, number]): TurnRe
   }
 
   const outcome = applyShotToBoard(state.playerBoard, state.playerShips, coordNumbers)
-  const message = shotOutcomeMsg(outcome, coordNumbers)
-
+  const message = enemyShotMsg(outcome, coordNumbers)
+  updateEnemyState(state, coordNumbers, message.logMsg)
+  console.log(message.printMsg)
   return message
+}
+
+export function updateEnemyState(state: GameState, coords: [number, number], result: string): void {
+  state.enemyHits.push(coords)
+  state.enemyTargets = validCoordinates(state.enemyBoard)
+  state.gameLog.push({
+    coords: coords,
+    side: 'enemy',
+    result: result
+  })
 }
 
 export function checkAiTarget(board: Board, coord: [number, number]): TurnResult {
@@ -47,7 +58,7 @@ export function pickRandomTarget(board: Board) {
   return validTargets[Math.floor(Math.random() * validTargets.length)]
 }
 
-export function shotOutcomeMsg(
+export function enemyShotMsg(
   outcome: GenericShotResult,
   coordNumbers: [number, number]
 ): TurnResult {
@@ -63,22 +74,22 @@ export function shotOutcomeMsg(
     case 'miss':
       message.ok = true
       message.printMsg = `Enemy shot at ${coordDisplay}: They missed!`
-      message.logMsg = `Shot at ${coordNumbers}: Miss!`
+      message.logMsg = `Miss`
       break
     case 'repeat':
       message.ok = false
       message.printMsg = 'Enemy tried a coordinate that was already targeted.'
-      message.logMsg = 'Already shot there, pick another target.'
+      message.logMsg = `Repeat`
       break
     case 'hit':
       message.ok = true
       message.printMsg = `Enemy shot at ${coordDisplay}: They hit!`
-      message.logMsg = `Shot at ${coordNumbers}: Hit!`
+      message.logMsg = `Hit a ${outcome.ship}`
       break
     case 'sunk':
       message.ok = true
       message.printMsg = `Enemy shot at ${coordDisplay}: They sunk your ${outcome.ship}!`
-      message.logMsg = `Shot at ${coordNumbers}: Sunk a ${outcome.ship}!`
+      message.logMsg = `Sunk a ${outcome.ship}`
       break
   }
   return message

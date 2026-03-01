@@ -54,13 +54,12 @@ export async function main(config: GameSettings) {
       )
     } else {
       raw = await ui.enterInput('Enter target (e.g. B7): ')
-      const parsed = coords.parseCoordinate(raw, state.boardSize)
-      playerTarget = parsed === null ? undefined : parsed
+      playerTarget = coords.parseCoordinate(raw, state.boardSize)
     }
     if (playerTarget !== undefined) {
       const playerResult = playerShot(state, playerTarget)
       if (playerResult.ok) {
-        previousPlayerShot = playerResult.shotResult
+        previousPlayerShot = playerResult.logMsg
         let computerTurnResult: TurnResult
         let enemyTarget: [number, number] | undefined
         do {
@@ -82,30 +81,20 @@ export async function main(config: GameSettings) {
           }
         } while (config.enemyAI && !computerTurnResult.ok && enemyTarget)
 
-        const computerMessage = computerTurnResult.printMsg
         const computerShotResult = computerTurnResult.logMsg
         previousEnemyShot = computerShotResult
-        console.log(playerResult.msg)
-        console.log(computerMessage)
         if (state.enemyShips.size === 0) gameOver = true
         if (state.playerShips.size === 0) gameOver = true
 
         ui.printBoardSection('\nEnemy Board\n', state.enemyBoard, config.hideEnemy)
         ui.printBoardSection('\nPlayer Board\n', state.playerBoard)
-      } else {
-        console.log(playerResult.msg)
       }
     } else {
       console.log('Error parsing coordinates. Unknown coordinates:', raw ?? '(none)')
     }
     if (gameOver) {
-      console.log('=== GAME OVER ===')
-      if (state.enemyShips.size === state.playerShips.size) {
-        console.log('=== TIE GAME! ===')
-      } else {
-        if (state.enemyShips.size === 0) console.log('=== YOU WIN! ===')
-        if (state.playerShips.size === 0) console.log('=== YOU LOSE! ===')
-      }
+      ui.gameOverScreen(state)
+      console.log(state.gameLog) // testing
       const input = await ui.enterInput('Enter (q) to quit or press Enter for new game.')
       if (input === 'q') {
         console.log('Thanks for playing! See you again.')

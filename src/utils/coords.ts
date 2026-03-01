@@ -1,15 +1,15 @@
 import type { Board } from '../types'
 
-export function parseCoordinate(input: string, boardSize: number): [number, number] | null {
+export function parseCoordinate(input: string, boardSize: number): [number, number] | undefined {
   const match = input
     .trim()
     .toUpperCase()
     .match(/^([A-J])(10|[1-9])$/)
-  if (!match) return null
+  if (!match) return undefined
 
   const col = match[1].charCodeAt(0) - 65
   const row = Number(match[2]) - 1
-  if (col > boardSize - 1 || row > boardSize - 1) return null
+  if (col > boardSize - 1 || row > boardSize - 1) return undefined
   return [row, col]
 }
 export function coordinateToDisplay(coords: [number, number]): string {
